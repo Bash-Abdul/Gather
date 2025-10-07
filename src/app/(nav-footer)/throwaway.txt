@@ -1,0 +1,53 @@
+ <div className="relative rounded-2xl overflow-hidden shadow-[var(--shadow-soft)] h-[75vh]">
+        {/* background image (place hero-image.jpg in /public) */}
+        <Image
+          src={Hero_Image}
+          alt="People meeting outdoors in a calm setting"
+          fill
+          priority
+          className="object-cover object-center"
+          aria-hidden="true"
+        />
+
+        {/* gradient overlay — keeps your existing gradient but semi-opaque */}
+        <div
+          className="absolute inset-0"
+          style={{
+            // uses your CSS variable, keep it if you have it, otherwise replace with a gradient
+            backgroundImage: "var(--gradient-hero)",
+            opacity: 0.75,
+            mixBlendMode: "overlay",
+          }}
+          aria-hidden="true"
+        />
+
+        {/* content sits above image + overlay */}
+        <div className="relative p-10">
+          <h1 className="text-4xl sm:text-5xl font-semibold text-primary-foreground">
+            Find your people, at your pace
+          </h1>
+          <p className="mt-3 text-primary-foreground/90 max-w-2xl">
+            Join calm meetups, try new things, connect without the noise.
+          </p>
+
+          <div className="flex items-center gap-x-6 mt-5">
+            <button
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2
+                   bg-primary text-primary-foreground shadow-sm
+                   hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-ring
+                   transition-all"
+            >
+              Explore events {"->"}
+            </button>
+
+            <button
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2
+                   bg-primary text-primary-foreground shadow-sm
+                   hover:opacity-90 focus:outline-none focus:ring-4 focus:ring-ring
+                   transition-all"
+            >
+              Create Account
+            </button>
+          </div>
+        </div>
+      </div>

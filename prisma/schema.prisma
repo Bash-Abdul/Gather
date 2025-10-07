@@ -1,0 +1,223 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// model User{
+//   id String @id @default(cuid())
+//   email String @unique
+//   passwordHash String
+//   name String?
+//   nickname String?
+//   about String?
+//   locationLabel String?
+//   latitude Float?
+//   longitude Float?
+//   isAnonymous Boolean @default(false)
+//   appAvatarId String?
+//   avatarUrl String?
+//   onboardingDone Boolean @default(false)
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt()
+//   deletedAt DateTime?
+
+
+//   // relations
+//   appAvatar      AppAvatar?   @relation(fields: [appAvatarId], references: [id])
+//   interests      UserInterest[]
+//   hostedEvents   Event[]      @relation("HostEvents")
+//   attendances    Attendance[] // RSVP / join records
+
+//   @@index([latitude, longitude]) // simple spatial index for naive geo queries
+// }
+
+
+// model AppAvatar {
+//   id       String  @id @default(cuid())
+//   name     String
+//   svgUrl   String  // or url to sprite or file in public bucket
+//   createdAt DateTime @default(now())
+
+//   users    User[]  // reverse relation: users who chose this app avatar
+// }
+
+// model Interest {
+//   id    String @id @default(cuid())
+//   name  String @unique
+//   // human-friendly tag, e.g. "Coffee", "Hiking", "Books"
+//   users UserInterest[]
+// }
+
+// model UserInterest {
+//   id         String   @id @default(cuid())
+//   userId     String
+//   interestId String
+//   createdAt  DateTime @default(now())
+
+//   user      User     @relation(fields: [userId], references: [id])
+//   interest  Interest @relation(fields: [interestId], references: [id])
+
+//   @@unique([userId, interestId])
+//   @@index([interestId, userId])
+// }
+
+// model Event {
+//   id          String    @id @default(cuid())
+//   title       String
+//   description String?
+//   startAt     DateTime  // required set time when event starts
+//   date        DateTime
+//   location    String?   // human label
+//   latitude    Float?
+//   longitude   Float?
+//   category    String?
+//   capacity    Int?      // optional limit
+//   isCancelled Boolean   @default(false)
+//   hostId      String
+//   createdAt   DateTime  @default(now())
+
+//   host        User      @relation("HostEvents", fields: [hostId], references: [id])
+//   attendances Attendance[]
+// }
+
+// model Attendance {
+//   id        String   @id @default(cuid())
+//   userId    String
+//   eventId   String
+//   status    AttendanceStatus @default(PENDING) // PENDING, CONFIRMED, CANCELLED
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   user  User  @relation(fields: [userId], references: [id])
+//   event Event @relation(fields: [eventId], references: [id])
+
+//   @@unique([userId, eventId]) // single attendance per user-event
+//   @@index([eventId, status])
+// }
+
+// enum AttendanceStatus {
+//   PENDING
+//   CONFIRMED
+//   CANCELLED
+// }
+
+
+/// ---------- Models (clean & practical) ----------
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  passwordHash  String?
+  name          String?        // optional real name
+  nickname      String?        // shown in UI (onboarding)
+  about         String?        // short bio
+  avatarUrl     String?        // user-uploaded avatar URL
+  appAvatarId   String?        // optional app-provided avatar
+  isAnonymous   Boolean        @default(false)
+  locationLabel String?        // friendly label like "London, UK"
+  latitude      Float?         // optional for geo features
+  longitude     Float?         // optional for geo features
+  onboardingDone Boolean       @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
+
+  // relations
+  appAvatar     AppAvatar?     @relation(fields: [appAvatarId], references: [id])
+  interests     UserInterest[]
+  hostedEvents  Event[]        @relation("HostEvents")
+  eventInterests EventInterest[]
+
+  @@index([latitude, longitude])
+}
+
+model AppAvatar {
+  id       String   @id @default(cuid())
+  name     String
+  imageUrl String   // path/URL to the app-provided avatar (SVG/PNG)
+  createdAt DateTime @default(now())
+
+  users    User[]   // users who picked this avatar
+}
+
+model Interest {
+  id    String @id @default(cuid())
+  name  String @unique
+
+  // relations
+  users  UserInterest[]
+  events EventTag[]
+}
+
+model UserInterest {
+  id         String   @id @default(cuid())
+  userId     String
+  interestId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  interest Interest @relation(fields: [interestId], references: [id])
+
+  @@unique([userId, interestId])
+  @@index([interestId, userId])
+}
+
+model Event {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  startAt     DateTime        // required start time
+  endAt       DateTime?       // optional end time
+  location    String?         // friendly location label
+  latitude    Float?
+  longitude   Float?
+  category    String?
+  capacity    Int?
+  isCancelled Boolean         @default(false)
+  hostId      String
+  createdAt   DateTime        @default(now())
+
+  host         User           @relation("HostEvents", fields: [hostId], references: [id])
+  eventInterests EventInterest[]
+  tags         EventTag[]
+}
+
+model EventTag {
+  id         String   @id @default(cuid())
+  eventId    String
+  interestId String
+  createdAt  DateTime @default(now())
+
+  event    Event    @relation(fields: [eventId], references: [id])
+  interest Interest @relation(fields: [interestId], references: [id])
+
+  @@unique([eventId, interestId])
+  @@index([interestId, eventId])
+}
+
+// /** This is the simple "I'm interested" marker (presence = interested).
+//  *  We keep it separate from tags/interests so it only represents user action.
+//  */
+model EventInterest {
+  id         String   @id @default(cuid())
+  userId     String
+  eventId    String
+  createdAt  DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId], name: "user_event_unique")
+  @@index([eventId, userId])
+}
