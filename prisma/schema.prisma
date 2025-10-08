@@ -113,51 +113,176 @@ datasource db {
 // }
 
 
+
+
+
+// ============== SHEMA 2 ===============
+
+
 /// ---------- Models (clean & practical) ----------
 
+// model User {
+//   id            String         @id @default(cuid())
+//   email         String         @unique
+//   passwordHash  String?
+//   name          String?        
+//   nickname      String?        
+//   about         String?        
+//   avatarUrl     String?        // user-uploaded avatar URL
+//   appAvatarId   String?        // optional app-provided avatar
+//   isAnonymous   Boolean        @default(false)
+//   locationLabel String?        // friendly label like "London, UK"
+//   latitude      Float?         
+//   longitude     Float?         
+//   onboardingDone Boolean       @default(false)
+//   createdAt     DateTime       @default(now())
+//   updatedAt     DateTime       @updatedAt
+//   deletedAt     DateTime?
+
+//   // relations
+//   appAvatar     AppAvatar?     @relation(fields: [appAvatarId], references: [id])
+//   interests     UserInterest[]
+//   hostedEvents  Event[]        @relation("HostEvents")
+//   eventInterests EventInterest[]
+
+//   @@index([latitude, longitude])
+// }
+
+// model AppAvatar {
+//   id       String   @id @default(cuid())
+//   name     String
+//   imageUrl String   // path/URL to the app-provided avatar (SVG/PNG)
+//   createdAt DateTime @default(now())
+
+//   users    User[]   // users who picked this avatar
+// }
+
+// model Interest {
+//   id    String @id @default(cuid())
+//   name  String @unique
+
+//   // relations
+//   users  UserInterest[]
+//   events EventTag[]
+// }
+
+// model UserInterest {
+//   id         String   @id @default(cuid())
+//   userId     String
+//   interestId String
+//   createdAt  DateTime @default(now())
+
+//   user     User     @relation(fields: [userId], references: [id])
+//   interest Interest @relation(fields: [interestId], references: [id])
+
+//   @@unique([userId, interestId])
+//   @@index([interestId, userId])
+// }
+
+// model Event {
+//   id          String          @id @default(cuid())
+//   title       String
+//   description String?
+//   startAt     DateTime        // required start time
+//   endAt       DateTime?       // optional end time
+//   location    String?         // friendly location label
+//   latitude    Float?
+//   longitude   Float?
+//   category    String?
+//   capacity    Int?
+//   isCancelled Boolean         @default(false)
+//   hostId      String
+//   createdAt   DateTime        @default(now())
+
+//   host         User           @relation("HostEvents", fields: [hostId], references: [id])
+//   eventInterests EventInterest[]
+//   tags         EventTag[]
+// }
+
+// model EventTag {
+//   id         String   @id @default(cuid())
+//   eventId    String
+//   interestId String
+//   createdAt  DateTime @default(now())
+
+//   event    Event    @relation(fields: [eventId], references: [id])
+//   interest Interest @relation(fields: [interestId], references: [id])
+
+//   @@unique([eventId, interestId])
+//   @@index([interestId, eventId])
+// }
+
+// // /** This is the simple "I'm interested" marker (presence = interested).
+// //  *  We keep it separate from tags/interests so it only represents user action.
+// //  */
+// model EventInterest {
+//   id         String   @id @default(cuid())
+//   userId     String
+//   eventId    String
+//   createdAt  DateTime @default(now())
+
+//   user  User  @relation(fields: [userId], references: [id])
+//   event Event @relation(fields: [eventId], references: [id])
+
+//   @@unique([userId, eventId], name: "user_event_unique")
+//   @@index([eventId, userId])
+// }
+
+
+
+// ===============  SHEMA 3 ===============
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  passwordHash  String?
-  name          String?        // optional real name
-  nickname      String?        // shown in UI (onboarding)
-  about         String?        // short bio
-  avatarUrl     String?        // user-uploaded avatar URL
-  appAvatarId   String?        // optional app-provided avatar
-  isAnonymous   Boolean        @default(false)
-  locationLabel String?        // friendly label like "London, UK"
-  latitude      Float?         // optional for geo features
-  longitude     Float?         // optional for geo features
+  id             String        @id @default(cuid())
+  name           String?       
+  nickname       String?       
+  email          String?       @unique
+  password       String? 
+  avatarUrl      String?       // uploaded or generated after onboarding
+  appAvatarId    String?       // platform-provided avatar
+  about          String?       
+  locationLabel  String?       
+  latitude       Float?        
+  longitude      Float?       
+  isAnonymous    Boolean       @default(false)  // user toggles this on/off 
   onboardingDone Boolean       @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   // relations
-  appAvatar     AppAvatar?     @relation(fields: [appAvatarId], references: [id])
-  interests     UserInterest[]
-  hostedEvents  Event[]        @relation("HostEvents")
-  eventInterests EventInterest[]
-
-  @@index([latitude, longitude])
+  accounts       Account[]
+  interests      UserInterest[]
+  appAvatar      AppAvatar?    @relation(fields: [appAvatarId], references: [id])
 }
 
+model Account {
+  id                 String   @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  createdAt          DateTime @default(now())
+
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+// For onboarding — platform avatars
 model AppAvatar {
-  id       String   @id @default(cuid())
-  name     String
-  imageUrl String   // path/URL to the app-provided avatar (SVG/PNG)
+  id        String   @id @default(cuid())
+  name      String
+  imageUrl  String
   createdAt DateTime @default(now())
 
-  users    User[]   // users who picked this avatar
+  users     User[]
 }
 
+// For interests selected during onboarding
 model Interest {
   id    String @id @default(cuid())
   name  String @unique
 
-  // relations
-  users  UserInterest[]
-  events EventTag[]
+  users UserInterest[]
 }
 
 model UserInterest {
@@ -166,58 +291,17 @@ model UserInterest {
   interestId String
   createdAt  DateTime @default(now())
 
-  user     User     @relation(fields: [userId], references: [id])
-  interest Interest @relation(fields: [interestId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  interest   Interest @relation(fields: [interestId], references: [id])
 
   @@unique([userId, interestId])
-  @@index([interestId, userId])
 }
 
-model Event {
-  id          String          @id @default(cuid())
-  title       String
-  description String?
-  startAt     DateTime        // required start time
-  endAt       DateTime?       // optional end time
-  location    String?         // friendly location label
-  latitude    Float?
-  longitude   Float?
-  category    String?
-  capacity    Int?
-  isCancelled Boolean         @default(false)
-  hostId      String
-  createdAt   DateTime        @default(now())
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-  host         User           @relation("HostEvents", fields: [hostId], references: [id])
-  eventInterests EventInterest[]
-  tags         EventTag[]
-}
-
-model EventTag {
-  id         String   @id @default(cuid())
-  eventId    String
-  interestId String
-  createdAt  DateTime @default(now())
-
-  event    Event    @relation(fields: [eventId], references: [id])
-  interest Interest @relation(fields: [interestId], references: [id])
-
-  @@unique([eventId, interestId])
-  @@index([interestId, eventId])
-}
-
-// /** This is the simple "I'm interested" marker (presence = interested).
-//  *  We keep it separate from tags/interests so it only represents user action.
-//  */
-model EventInterest {
-  id         String   @id @default(cuid())
-  userId     String
-  eventId    String
-  createdAt  DateTime @default(now())
-
-  user  User  @relation(fields: [userId], references: [id])
-  event Event @relation(fields: [eventId], references: [id])
-
-  @@unique([userId, eventId], name: "user_event_unique")
-  @@index([eventId, userId])
-}
+  @@index([identifier])
+  @@index([expires])
+} 

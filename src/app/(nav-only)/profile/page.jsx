@@ -216,11 +216,38 @@
 // import { Button } from "@/components/ui/button";
 // import { Card } from "@/components/ui/card";
 // import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
+'use client'
+
 import { Calendar, Edit2, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useAuth } from "@/app/providers";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 const Profile = () => {
-  const user = {
+
+  const router = useRouter();
+
+  const { signOut, status, user, loading, setLoading} = useAuth();
+
+   // Redirect if unauthenticated
+   useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/auth"); // redirect to sign-in page
+    }
+  }, [status, router]);
+
+  // Show nothing (or loader) while checking session
+  if (status === "loading") {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  // Block rendering if user is null (shouldn't happen after redirect)
+  if (!user) return null;
+
+
+  const user_profile = {
     name: "Alex Morgan",
     email: "alex@example.com",
     initials: "AM",
@@ -254,6 +281,13 @@ const Profile = () => {
   const upcomingEvents = joinedEvents.filter(e => e.status === "upcoming");
   const pastEvents = joinedEvents.filter(e => e.status === "past");
 
+  const handleSignOut = async () => {
+    setLoading(true)
+    await signOut({ callbackUrl: '/'})
+    router.push('/')
+    setLoading(false);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* <Navigation /> */}
@@ -270,10 +304,10 @@ const Profile = () => {
                   </AvatarFallback>
                 </Avatar> */}
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-1">{user.name}</h1>
-                  <p className="text-muted-foreground mb-3">{user.email}</p>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-1">{user_profile.name}</h1>
+                  <p className="text-muted-foreground mb-3">{user_profile.email}</p>
                   <div className="flex flex-wrap gap-2">
-                    {user.interests.map((interest) => (
+                    {user_profile.interests.map((interest) => (
                       <span
                         key={interest}
                         className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-secondary text-secondary-foreground"
@@ -289,9 +323,11 @@ const Profile = () => {
                   <Edit2 className="w-4 h-4 mr-2" />
                   Edit Profile
                 </button>
-                <button className="flex-1 sm:flex-none flex items-center cursor-pointer">
+                <button onClick={handleSignOut} className="flex-1 sm:flex-none flex items-center cursor-pointer">
                   <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
+                  {
+                    loading ? 'Signing out...' : 'Sign out'
+                  }
                 </button>
               </div>
             </div>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Calendar, Home, User } from "lucide-react";
 import ThemeToggle from "./theme-toggle";
+import { useAuth } from "../providers";
 
 function NavLink({ href, label, Icon }) {
   const pathname = usePathname();
@@ -23,6 +24,8 @@ function NavLink({ href, label, Icon }) {
 }
 
 export default function Navigation() {
+  const { user, status } = useAuth();
+
   return (
     <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -42,17 +45,20 @@ export default function Navigation() {
             <NavLink href="/" label="Home" Icon={Home} />
             <NavLink href="/events" label="Events" Icon={Calendar} />
             <NavLink href="/onboarding" label="Onboarding" />
-            <NavLink href="/profile" label="Profile" Icon={User} />
+
+            {status === "authenticated" && user ? (
+              <NavLink href="/profile" label="Profile" Icon={User} />
+            ) : (
+              <Link
+                href="/auth"
+                className="ml-2 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm
+                         bg-primary text-primary-foreground hover:opacity-90 transition-all"
+              >
+                Sign In
+              </Link>
+            )}
 
             <ThemeToggle />
-
-            <Link
-              href="/auth"
-              className="ml-2 inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm
-                         bg-primary text-primary-foreground hover:opacity-90 transition-all"
-            >
-              Sign In
-            </Link>
           </div>
         </div>
       </div>
